@@ -4,7 +4,7 @@ This document describes the multi-turn agent implementation based on `preamble_s
 
 ## Overview
 
-The `preamble_self_route_v7h_modalities` agent is a multi-turn autonomous agent that performs multiple steps per query to fully answer user requests. Unlike the tool-calling approach in `v7i_tools`, this agent uses **modalities** - a structured JSON format embedded in `<lb_think>` tags that allows the agent to plan and execute multiple sequential or parallel operations.
+The `preamble_self_route_v7h_modalities` agent is a multi-turn autonomous agent that performs multiple steps per query to fully answer user requests. Unlike the tool-calling approach in `v7i_tools`, this agent uses **modalities** - a structured JSON format embedded in `<fs_think>` tags that allows the agent to plan and execute multiple sequential or parallel operations.
 
 ## Key Features
 
@@ -100,7 +100,7 @@ The agent outputs modality JSON in this format:
 
 Each agent message has three parts:
 
-1. **Initial Analysis** (in `<lb_think>` tags):
+1. **Initial Analysis** (in `<fs_think>` tags):
    - Format: `E0`, `N1`, `M10`, etc.
    - E = Enough info, N = Not enough (1-3 steps), M = Multi-step (4+ steps)
    - Number = estimated remaining steps
@@ -109,29 +109,28 @@ Each agent message has three parts:
    - Natural language response
    - Explains what the agent is doing
 
-3. **Final Internal Portion** (in `<lb_think>` tags):
+3. **Final Internal Portion** (in `<fs_think>` tags):
    - `Qx` = number of questions asked (if >0, stops and waits for user)
    - Self-critique (1-7 words, only actionable flaws)
    - Optional modality JSON if continuing to next step
 
 Example:
 ```
-<lb_think>N2</lb_think>
+<fs_think>N2</fs_think>
 Let me check the stock prices for AAPL and GOOGL...
-<lb_think>Q0 Need both prices{{"first_modality":{"type":"get_stock_price","symbol":"AAPL","period":"1d"},"additional_parallel_modalities":[{"type":"get_stock_price","symbol":"GOOGL","period":"1d"}]}}</lb_think>
+<fs_think>Q0 Need both prices{{"first_modality":{"type":"get_stock_price","symbol":"AAPL","period":"1d"},"additional_parallel_modalities":[{"type":"get_stock_price","symbol":"GOOGL","period":"1d"}]}}</fs_think>
 ```
 
 ## Key Differences from V7H
 
 1. **Removed User Context**: All references to `chat_with_user_context`, user names, and personal data removed
-2. **FinSense Branding**: Changed from "Littlebird" to "FinSense"
 3. **Financial Tools Only**: Examples and modalities focus on financial tools (stocks, macro data, finance news, web search)
 4. **Simplified Helpers**: Helper function doesn't require user or agent_config parameters
 
 ## Processing Modalities
 
 The chat router needs to:
-1. Parse `<lb_think>` tags to extract modality JSON
+1. Parse `<fs_think>` tags to extract modality JSON
 2. Execute the modalities (call corresponding tools)
 3. Format results and add to conversation context
 4. Continue streaming to get next agent response
@@ -179,7 +178,7 @@ To integrate this agent into the chat router:
 
 1. Replace `PREAMBLE_SPEC_V7I_TOOLS` with `PREAMBLE_SPEC_V7H_MODALITIES`
 2. Remove tool calling logic (Gemini function calls)
-3. Add modality JSON parsing from `<lb_think>` tags
+3. Add modality JSON parsing from `<fs_think>` tags
 4. Execute modalities → call corresponding tools
 5. Add modality results to conversation context
 6. Continue streaming for multi-step responses

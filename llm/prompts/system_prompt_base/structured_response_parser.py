@@ -55,7 +55,7 @@ class StructuredAgentResponse:
         return self.final_internal.get("self_critique", "")
     
     def format_for_display(self) -> str:
-        """Format response for display (reconstructing lb_think tags for compatibility)."""
+        """Format response for display (reconstructing fs_think tags for compatibility)."""
         # Build initial analysis string
         status_str = self.status
         steps_str = str(self.estimated_steps)
@@ -84,8 +84,8 @@ class StructuredAgentResponse:
         
         final_internal = " ".join(final_parts)
         
-        # Reconstruct with lb_think tags for compatibility
-        return f"<lb_think>{initial_analysis}</lb_think>{self.user_facing_text}<lb_think>{final_internal}</lb_think>"
+        # Reconstruct with fs_think tags for compatibility
+        return f"<fs_think>{initial_analysis}</fs_think>{self.user_facing_text}<fs_think>{final_internal}</fs_think>"
     
     def to_modalities_list(self) -> list[dict[str, Any]]:
         """Extract modalities as a list for execution."""

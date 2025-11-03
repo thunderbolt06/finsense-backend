@@ -12,7 +12,7 @@ async def get_context_for_modality(
     Execute a modality and return its result.
     
     Maps modality types to tool names and executes them.
-    Returns a context JSON object compatible with Little-Bird-Backend format.
+    Returns a context JSON object.
     """
     modality_type = modality.get("type")
     

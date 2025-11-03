@@ -21,11 +21,13 @@ from db.message_helpers import (
 from db.models import ChatMessage, ChatWithContext
 from features.tool_calling.logic import CORE_TOOLS_DICT, call_tool
 from llm.call_gemini import DEFAULT_GEMINI_PRO_MODEL, stream_gemini
+from llm.constants import END_TAG_THINKING, START_TAG_THINKING
 from llm.domain.enums import AIModelsProvider, ChatDataType, ChatRole
 from llm.domain.models import ToolData
 from llm.prompts.system_prompt_base.preamble_self_route_v7i_tools import PREAMBLE_SPEC_V7I_TOOLS
 from llm.types import LLMConfig
 from utils.logging import logger
+from utils.strings import remove_content_between_tags
 
 router = APIRouter(prefix="/api")
 
@@ -197,12 +199,14 @@ async def process_chat_stream(
         # Stream text
         if response.text:
             had_initial_response = True
-            accumulated_text += response.text
+            # Remove fs_think tags before accumulating and streaming
+            clean_text = remove_content_between_tags(response.text, START_TAG_THINKING, END_TAG_THINKING)
+            accumulated_text += clean_text
             if response.metadata.get("thought"):
                 pass
                 # yield f"data: {json.dumps({'text': response.text, 'event': 'thought'})}\n\n"
             else:
-                yield f"data: {json.dumps({'text': response.text, 'event': 'token'})}\n\n"
+                yield f"data: {json.dumps({'text': clean_text, 'event': 'token'})}\n\n"
     
     logger.info(
         f"Initial stream completed. Tool calls: {len(tools_dict)}, Had text: {had_initial_response}, Text length: {len(accumulated_text)}"
@@ -283,9 +287,11 @@ async def process_chat_stream(
                 
                 # Stream text (skip thought metadata)
                 if response.text and not response.metadata.get("thought"):
-                    iteration_accumulated_text += response.text
-                    current_accumulated_text += response.text
-                    yield f"data: {json.dumps({'text': response.text, 'event': 'token'})}\n\n"
+                    # Remove fs_think tags before accumulating and streaming
+                    clean_text = remove_content_between_tags(response.text, START_TAG_THINKING, END_TAG_THINKING)
+                    iteration_accumulated_text += clean_text
+                    current_accumulated_text += clean_text
+                    yield f"data: {json.dumps({'text': clean_text, 'event': 'token'})}\n\n"
             
             logger.info(
                 f"Stream iteration {iteration} completed. Responses: {response_count}, Text length: {len(iteration_accumulated_text)}, Tool calls: {len(iteration_tools_dict)}"

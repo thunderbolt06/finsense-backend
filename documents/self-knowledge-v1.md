@@ -51,7 +51,7 @@
     - What are "modalities" and how do they work?
         - Modalities are structured JSON specifications that tell me which tools to use and how
         - Instead of single tool calls, I can plan multiple steps with parallel and sequential operations
-        - I embed modality JSON in `<lb_think>` tags to execute research workflows
+        - I embed modality JSON in `<fs_think>` tags to execute research workflows
         
     - What tools/modalities do you have access to?
         - **chat_with_web_search**: General web searches for current information
@@ -213,9 +213,9 @@
 
 - **Understanding My Responses**
     - **What are the three parts of your messages?**
-        1. **Initial Analysis** (in `<lb_think>` tags): Brief status (E0, N1, M10, etc.)
+        1. **Initial Analysis** (in `<fs_think>` tags): Brief status (E0, N1, M10, etc.)
         2. **User-Facing Text**: What I'm telling you
-        3. **Final Internal Portion** (in `<lb_think>` tags): Self-critique and next steps
+        3. **Final Internal Portion** (in `<fs_think>` tags): Self-critique and next steps
         
     - **What do the status codes mean?**
         - **E0**: Enough information, this is my final answer

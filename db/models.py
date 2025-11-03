@@ -224,7 +224,9 @@ class ChatMessage(TimestampedUUIDModel):
         # Update parent's child_message reference if parent exists
         if self.parent_message:
             parent = ChatMessage.objects.get(pk=self.parent_message.pk)
-            if parent.child_message != self:
+            # Only update if parent doesn't already have a child_message set
+            # (avoid unique constraint violation and preserve existing chain)
+            if not parent.child_message:
                 parent.child_message = self
                 parent.save(update_fields=['child_message'])
         

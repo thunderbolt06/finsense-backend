@@ -1,6 +1,8 @@
-"""String utility functions - copied from Little-Bird-Backend."""
+"""String utility functions."""
 import json
 import re
+
+from utils.logging import logger
 
 
 def extract_json(text: str):
@@ -110,12 +112,40 @@ def extract_content_between_tags(text: str, start_tag: str, end_tag: str) -> str
 def remove_content_between_tags(text: str, start_tag: str, end_tag: str) -> str:
     """Remove content between specified start and end tags.
 
-    Example: "blah<lb_think>...</lb_think>blah<lb_think>...</lb_think>blah" -> "blahblahblah"
+    Example: "blah<fs_think>...</fs_think>blah<fs_think>...</fs_think>blah" -> "blahblahblah"
 
     NOTE: Wouldn't work with nested tags.
     """
+    logger.info(f"Removing content between tags: {start_tag} and {end_tag}")
     return re.sub(f"{re.escape(start_tag)}.*?{re.escape(end_tag)}", "", text, flags=re.DOTALL)
 
+
+def remove_content_with_tags(text: str, start_tag: str, end_tag: str) -> str:
+    """Remove content between specified start and end tags and return the text.
+    If only start_tag is found in the text then return only the text before the start_tag. 
+    And if only end_tag is found in the text then return only the text after the end_tag.
+
+    Example: "blah<fs_think>...</fs_think>blah<fs_think>...</fs_think>blah" -> "blahblahblah"
+    Example: "blah<fs_think>....." -> "blah"
+    Example: "<fs_think>...</fs_think>blah" -> "blah"
+    Example: "blah<fs_think>...</fs_think>" -> ""
+    Example: "<fs_think>...</fs_think>" -> ""
+    Example: "blah" -> "blah"
+    Example: "" -> ""
+    Example: None -> None
+    Example: "" -> ""
+    Example: "" -> ""
+
+    NOTE: Wouldn't work with nested tags.
+    """
+    if start_tag in text and end_tag in text:
+        return re.sub(f"{re.escape(start_tag)}.*?{re.escape(end_tag)}", "", text, flags=re.DOTALL)
+    elif start_tag in text:
+        return text.split(start_tag)[0]
+    elif end_tag in text:
+        return text.split(end_tag)[1]
+    else:
+        return text
 
 def format_exception(e: Exception) -> str:
     """Format an exception to a string showing both the exception type and message."""

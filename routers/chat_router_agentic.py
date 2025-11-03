@@ -1,6 +1,5 @@
 """
 Multi-step agentic chat router with modality support.
-Based on Little-Bird-Backend's handle_chat_v4_request pattern.
 Uses ChatMessage model for persistence.
 """
 import asyncio
@@ -29,6 +28,7 @@ from llm.modality_parsing import (
 from llm.prompts.system_prompt_base.preamble_self_route_v7h_modalities import PREAMBLE_SPEC_V7H_MODALITIES
 from llm.types import LLMConfig
 from utils.logging import logger
+from utils.strings import remove_content_between_tags, remove_content_with_tags
 
 router = APIRouter(prefix="/api")
 
@@ -106,7 +106,7 @@ def append_between_step_message(
         if identifiers:
             message = f"Here are the modalities invoked in the last step: {', '.join(identifiers)}"
     
-    return create_user_message(
+    return create_assistant_message(
         chat=chat,
         content=f"<system>{message}</system>",
         parent_message=parent_message,
@@ -136,6 +136,14 @@ async def construct_context_and_system_prompt(
         # Combine all modalities to execute
         all_modalities = ([first_modality] if first_modality else []) + parallel_modalities
         
+        print(f"\n{'='*80}")
+        print(f"MODALITY EXECUTION - Step {step}")
+        print(f"{'='*80}")
+        print(f"Total modalities to execute: {len(all_modalities)}")
+        print(f"First modality: {first_modality}")
+        print(f"Parallel modalities: {parallel_modalities}")
+        print(f"All modalities: {all_modalities}")
+        
         # Execute all modalities in parallel
         logger.info(f"Executing {len(all_modalities)} modalities in parallel for step {step}")
         modality_results = await asyncio.gather(
@@ -143,14 +151,34 @@ async def construct_context_and_system_prompt(
             return_exceptions=True,
         )
         
+        print(f"\nModality results received: {len(modality_results)}")
+        print(f"Results type: {type(modality_results)}")
+        
         # Add results to context_json
-        for result in modality_results:
+        for idx, result in enumerate(modality_results):
+            print(f"\n--- Processing modality result {idx + 1}/{len(modality_results)} ---")
+            print(f"Result type: {type(result)}")
+            print(f"Result value: {result}")
+            
             if isinstance(result, Exception):
+                print(f"ERROR: Modality execution failed with exception: {result}")
                 logger.error(f"Modality execution error: {result}", exc_info=True)
                 continue
+            
             if result:
+                print(f"SUCCESS: Modality result is valid")
+                print(f"Result keys: {result.keys() if isinstance(result, dict) else 'N/A'}")
+                print(f"Result type field: {result.get('type', 'unknown') if isinstance(result, dict) else 'N/A'}")
+                
                 context_json.append(result)
                 logger.info(f"Added context from modality: {result.get('type', 'unknown')}")
+                print(f"Added to context_json. Total context items: {len(context_json)}")
+            else:
+                print(f"WARNING: Modality returned None or empty result")
+        
+        print(f"\nFinal context_json length: {len(context_json)}")
+        print(f"Final context_json: {context_json}")
+        print(f"{'='*80}\n")
     
     # Get system prompt based on step
     if step == 0:
@@ -163,26 +191,59 @@ async def construct_context_and_system_prompt(
     # Add context to system prompt if we have any
     # Format context in a way that's useful for the LLM
     if context_json:
+        print(f"\n{'='*80}")
+        print(f"FORMATTING CONTEXT FOR SYSTEM PROMPT")
+        print(f"{'='*80}")
+        print(f"Processing {len(context_json)} context items")
+        
         context_parts = []
-        for ctx in context_json:
+        for idx, ctx in enumerate(context_json):
+            print(f"\n--- Formatting context item {idx + 1}/{len(context_json)} ---")
             ctx_type = ctx.get("type", "unknown")
             ctx_content = ctx.get("content", {})
             
+            print(f"Context type: {ctx_type}")
+            print(f"Context content keys: {ctx_content.keys() if isinstance(ctx_content, dict) else 'N/A'}")
+            print(f"Context content: {ctx_content}")
+            
             if ctx_type == "web_search":
-                context_parts.append(f"## Web Search Results\nQuery: {ctx_content.get('search_query', 'N/A')}\nResults: {ctx_content.get('results', 'No results')}")
+                formatted = f"## Web Search Results\nQuery: {ctx_content.get('search_query', 'N/A')}\nResults: {ctx_content.get('results', 'No results')}"
+                context_parts.append(formatted)
+                print(f"Formatted as web_search")
             elif ctx_type == "stock_price":
-                context_parts.append(f"## Stock Price Data\nSymbol: {ctx_content.get('symbol', 'N/A')}\nPeriod: {ctx_content.get('period', 'N/A')}\nData: {ctx_content.get('result', 'No data')}")
+                formatted = f"## Stock Price Data\nSymbol: {ctx_content.get('symbol', 'N/A')}\nPeriod: {ctx_content.get('period', 'N/A')}\nData: {ctx_content.get('result', 'No data')}"
+                context_parts.append(formatted)
+                print(f"Formatted as stock_price")
             elif ctx_type == "macro_data":
-                context_parts.append(f"## Macroeconomic Data\nMetric: {ctx_content.get('metric', 'N/A')}\nData: {ctx_content.get('result', 'No data')}")
+                formatted = f"## Macroeconomic Data\nMetric: {ctx_content.get('metric', 'N/A')}\nData: {ctx_content.get('result', 'No data')}"
+                context_parts.append(formatted)
+                print(f"Formatted as macro_data")
             elif ctx_type == "finance_news":
-                context_parts.append(f"## Finance News\nTopic: {ctx_content.get('topic', 'N/A')}\nArticles: {ctx_content.get('result', 'No articles')}")
+                formatted = f"## Finance News\nTopic: {ctx_content.get('topic', 'N/A')}\nArticles: {ctx_content.get('result', 'No articles')}"
+                context_parts.append(formatted)
+                print(f"Formatted as finance_news")
             elif ctx_type == "self_knowledge":
-                context_parts.append(f"## Self-Knowledge Documentation\n{ctx_content.get('result', 'No documentation')}")
+                formatted = f"## Self-Knowledge Documentation\n{ctx_content.get('result', 'No documentation')}"
+                context_parts.append(formatted)
+                print(f"Formatted as self_knowledge")
+            else:
+                print(f"WARNING: Unknown context type '{ctx_type}', skipping formatting")
         
         if context_parts:
             context_str = "\n\n".join(context_parts)
+            print(f"\nFormatted context string length: {len(context_str)} characters")
+            print(f"Formatted context preview (first 500 chars):\n{context_str[:500]}...")
+            
             system_prompt_text += f"\n\n---\n## Context from Previous Step\n\n{context_str}\n\n---\n"
             logger.info(f"Added {len(context_json)} context items to system prompt")
+            
+            print(f"Context successfully added to system prompt")
+            print(f"Final system prompt length: {len(system_prompt_text)} characters")
+        else:
+            print(f"WARNING: No context parts were formatted (context_json had items but none matched known types)")
+        print(f"{'='*80}\n")
+    else:
+        print(f"\nNo context_json to add to system prompt (step={step}, routing_info exists={routing_info is not None})\n")
     
     return context_json, system_prompt_text
 
@@ -193,6 +254,7 @@ async def run_agentic_step(
     step: int,
     routing_info: RoutingInfo | None,
     use_streaming: bool = True,
+    latest_message: ChatMessage | None = None,
 ) -> AsyncGenerator[tuple[str, RoutingInfo | None, bool], None]:
     """
     Run a single agentic step.
@@ -210,6 +272,11 @@ async def run_agentic_step(
         - new_routing_info: Routing info extracted from this step's response
         - is_done: Whether this is the final step
     """
+    print(f"message_chain: {message_chain}")
+    print(f"routing_info: {routing_info}")
+    print(f"step: {step}")
+    print(f"use_streaming: {use_streaming}")
+    print(f"chat: {chat}")
     loop = asyncio.get_event_loop()
     
     # Construct context and system prompt
@@ -219,14 +286,15 @@ async def run_agentic_step(
         step=step,
         routing_info=routing_info,
     )
-    
+
     # Convert message chain to API format
-    api_history = messages_to_api_format(message_chain)
+    api_history = messages_to_api_format(message_chain, latest_message=latest_message)
     
     logger.info(f"Starting agentic step {step} (chat_id={chat.id}, history_length={len(api_history)})")
     
     # Stream LLM response
     accumulated_text = ""
+    render_text = ""
     assistant_msg: ChatMessage | None = None
     parent_message = message_chain[-1] if message_chain else None
     
@@ -238,11 +306,16 @@ async def run_agentic_step(
         llm_config=LLMConfig(),
     ):
         if response.text:
+            print(f"response.text: {response.text}")
+            # Remove fs_think tags before accumulating and streaming
             accumulated_text += response.text
             is_thought = response.metadata.get("thought", False)
-            event_type = "thought" if is_thought else "token"
-            yield json.dumps({"text": response.text, "event": event_type}), None, False
+            if not is_thought:
+                render_text += response.text
     
+    render_text = remove_content_with_tags(render_text, START_TAG_THINKING, END_TAG_THINKING)
+    render_text += "\n\n"
+    yield json.dumps({"text": render_text, "event": "token"}), None, False
     logger.info(f"Step {step} LLM stream completed. Text length: {len(accumulated_text)}")
     
     # Create assistant message
@@ -258,46 +331,69 @@ async def run_agentic_step(
         )
     
     # Parse thinking blocks to extract routing info
-    # This matches Little-Bird-Backend's parse_thinking_blocks logic
     new_routing_info: RoutingInfo | None = None
     is_modality_called = False
     is_tool_called = False  # We don't use tools in this agent, but keeping for consistency
     
     if accumulated_text and assistant_msg:
         # Parse thinking blocks from the message
+        print(f"\n{'='*80}")
+        print(f"PARSING THINKING BLOCKS - Step {step}")
+        print(f"{'='*80}")
+        print(f"Accumulated text length: {len(accumulated_text)}")
+        print(f"Assistant message ID: {assistant_msg.id}")
+        
         routing_info, error = await loop.run_in_executor(
             None,
             lambda: parse_thinking_blocks_from_message(assistant_msg.content)
         )
         
         if error:
+            print(f"ERROR: Failed to parse thinking blocks: {error}")
             logger.warning(f"Error parsing thinking blocks: {error}")
+        else:
+            print(f"Parsing completed successfully")
         
         if routing_info:
+            print(f"\nRouting info found:")
+            print(f"Routing info type: {type(routing_info)}")
+            print(f"Routing info: {routing_info}")
+            
             new_routing_info = routing_info
             is_modality_called = True
             
             # Extract and yield modalities info
             modalities = extract_modalities(routing_info)
+            print(f"\nExtracted modalities: {modalities}")
+            print(f"Number of modalities: {len(modalities)}")
+            
             if modalities:
+                for idx, mod in enumerate(modalities):
+                    print(f"  Modality {idx + 1}: {mod}")
+                
                 modalities_str = json.dumps(modalities)
                 yield json.dumps({"modalities": modalities_str, "event": "progress_message"}), new_routing_info, False
                 logger.info(f"Step {step}: Modalities called: {[m.get('type') for m in modalities]}")
+                print(f"Modalities yielded to frontend")
+            else:
+                print(f"WARNING: Routing info found but no modalities extracted")
         else:
+            print(f"No routing info found in thinking blocks")
+        print(f"{'='*80}\n")
+        if not routing_info:
             # No modality called
             is_modality_called = False
             logger.info(f"Step {step}: No modality called")
     else:
-        # No text response - this shouldn't happen but handle gracefully
         logger.warning(f"Step {step}: No text response received")
         is_modality_called = False
     
-    # Handle max steps or manual interrupt (similar to Little-Bird-Backend line 1609)
+    # Handle max steps or manual interrupt 
     if step >= MAX_AGENTIC_STEPS - 1:
-        is_modality_called = False  # Force completion
+        is_modality_called = False
         logger.info(f"Step {step}: Max steps reached ({MAX_AGENTIC_STEPS})")
     
-    # Insert between-step message if modality was called (matches Little-Bird-Backend line 1616-1617)
+    # Insert between-step message if modality was called
     if is_modality_called and assistant_msg:
         between_msg = await loop.run_in_executor(
             None,
@@ -305,16 +401,13 @@ async def run_agentic_step(
         )
         logger.info(f"Step {step}: Inserted between-step message, continuing to step {step + 1}")
     
-    # Determine event type (matches Little-Bird-Backend line 1635-1645)
+    # Determine event type
     if is_modality_called or is_tool_called:
-        # Continue to next step
         event = "finish_one_assistant_message"
         is_done = False
     else:
-        # Done - no more modalities or tools
         event = "done"
         is_done = True
-        # Mark chat as finished
         chat.finished = True
         try:
             await chat.asave()
@@ -335,7 +428,6 @@ async def handle_chat_request(
     Handle chat request with multi-step agentic loop.
     
     This is the main entry point that manages the agentic loop.
-    Pattern copied from Little-Bird-Backend's handle_chat_v4_request.
     """
     loop = asyncio.get_event_loop()
     
@@ -373,26 +465,24 @@ async def handle_chat_request(
             message_chain=message_chain,
             step=step,
             routing_info=routing_info,
+            latest_message=user_msg,
         ):
             yield f"data: {event_data}\n\n"
             
-            # Check if event is "done" (matches Little-Bird-Backend line 1440-1442)
+            # Check if event is "done"
             try:
                 event_dict = json.loads(event_data)
                 if event_dict.get("event") == "done":
-                    logger.info(f"Got done event, returning", final_step=step)
+                    logger.info(f"Got done event, returning... final step: {step}")
                     return
             except (json.JSONDecodeError, KeyError):
-                # If parsing fails, fall back to is_done flag
                 if is_done:
                     logger.info(f"Agentic loop completed at step {step} (via is_done flag)")
                     return
             
-            # Update routing_info for next iteration
             if new_routing_info:
                 routing_info = new_routing_info
     
-    # Max steps reached - mark as done
     logger.warning(f"Max agentic steps ({MAX_AGENTIC_STEPS}) reached")
     chat.finished = True
     try:

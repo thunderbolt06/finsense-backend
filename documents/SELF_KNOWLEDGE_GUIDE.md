@@ -54,7 +54,7 @@ Self-knowledge is a special modality that serves as a "docs lookup" mechanism. W
 2. **Agent recognizes**: Question is about its own capabilities
 3. **Agent outputs**: 
    ```
-   Checking my docs...<lb_think>{"first_modality": {"type": "self_knowledge"}}</lb_think>
+   Checking my docs...<fs_think>{"first_modality": {"type": "self_knowledge"}}</fs_think>
    ```
 4. **System executes**: `self_knowledge()` tool handler
 5. **Tool handler reads**: `documents/self-knowledge-v1.md`
@@ -73,7 +73,7 @@ Self-knowledge is a special modality that serves as a "docs lookup" mechanism. W
 ## Key Characteristics
 
 ### Speed Optimization
-- **For modalities**: Skip initial `<lb_think>` tags
+- **For modalities**: Skip initial `<fs_think>` tags
 - **User-facing text**: Just "Checking my docs..."
 - **Goal**: Minimize latency when retrieving documentation
 
@@ -118,7 +118,7 @@ Self-knowledge is a special modality that serves as a "docs lookup" mechanism. W
 User: "What tools do you have?"
 
 Agent (v7h_modalities):
-  Checking my docs...<lb_think>{"first_modality": {"type": "self_knowledge"}}</lb_think>
+  Checking my docs...<fs_think>{"first_modality": {"type": "self_knowledge"}}</fs_think>
 
 System: Executes self_knowledge → Returns full document
 
@@ -138,7 +138,7 @@ Agent:
 User: "How do I query economic indicators?"
 
 Agent (v7h_modalities):
-  Checking my docs...<lb_think>{"first_modality": {"type": "self_knowledge"}}</lb_think>
+  Checking my docs...<fs_think>{"first_modality": {"type": "self_knowledge"}}</fs_think>
 
 System: Returns self-knowledge document
 
@@ -162,7 +162,7 @@ Agent:
 User: "How do you work?"
 
 Agent:
-  Checking my docs...<lb_think>{"first_modality": {"type": "self_knowledge"}}</lb_think>
+  Checking my docs...<fs_think>{"first_modality": {"type": "self_knowledge"}}</fs_think>
 
 System: Returns documentation
 

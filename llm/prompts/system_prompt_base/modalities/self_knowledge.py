@@ -26,9 +26,9 @@ Examples when NOT to use:
 - "What's the CPI?" - NO (user asking for data, not about your capabilities)
 
 IMPORTANT: 
-- Output the modality immediately without initial <lb_think> tags
+- Output the modality immediately without initial <fs_think> tags
 - Just say "Checking my docs..." then output the modality JSON
-- End with "</lb_think>" tag
+- End with "</fs_think>" tag
 - You will get the results in your NEXT turn
 """,
 )

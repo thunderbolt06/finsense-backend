@@ -74,7 +74,7 @@ def parse_thinking_blocks_from_message(
     """
     Parse thinking blocks from a message and extract routing information.
     
-    Looks for the last <lb_think> block and extracts JSON from it.
+    Looks for the last <fs_think> block and extracts JSON from it.
     """
     # Find all thinking blocks
     start_idx = message_content.rfind(START_TAG_THINKING)

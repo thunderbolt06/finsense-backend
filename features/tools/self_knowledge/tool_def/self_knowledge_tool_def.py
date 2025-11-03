@@ -13,7 +13,7 @@ Examples:
 - "What's the CPI?" - NO (user is asking for data, not about your capabilities)
 
 Example of what NOT to output:
-- DON'T: "<lb_think>..." (don't output these tags, for self_knowledge must ONLY call tool)
+- DON'T: "<fs_think>..." (don't output these tags, for self_knowledge must ONLY call tool)
 """
 
 SELF_KNOWLEDGE_TOOL = ToolDefinition(

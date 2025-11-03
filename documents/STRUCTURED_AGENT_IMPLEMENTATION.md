@@ -71,7 +71,7 @@ Provides:
 - **Properties**: Direct access to response elements
 - **Methods**: 
   - `to_modalities_list()`: Extract modalities for execution
-  - `format_for_display()`: Format with lb_think tags (compatibility)
+  - `format_for_display()`: Format with fs_think tags (compatibility)
 - **Helpers**: `is_final`, `is_continuing` flags
 
 ### 3. Modality Execution

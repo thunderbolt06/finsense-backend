@@ -51,7 +51,7 @@ This document summarizes the implementation of the self-knowledge feature for Fi
 
 ```
 User Question → Agent recognizes capability question → 
-Outputs: "Checking my docs...<lb_think>{"first_modality": {"type": "self_knowledge"}}</lb_think>" →
+Outputs: "Checking my docs...<fs_think>{"first_modality": {"type": "self_knowledge"}}</fs_think>" →
 System executes self_knowledge() → 
 Returns self-knowledge-v1.md → 
 Agent uses document to answer question
@@ -96,7 +96,7 @@ Agent uses document to answer question
 ## Key Features
 
 ### Speed Optimization
-- Skips initial `<lb_think>` tags
+- Skips initial `<fs_think>` tags
 - Minimal user-facing text ("Checking my docs...")
 - Direct modality/tool call
 - Fast retrieval and response

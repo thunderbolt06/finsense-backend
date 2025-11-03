@@ -8,7 +8,7 @@ The **structured outputs agent** (v7h_structured) is an evolution of the modalit
 
 | Feature | v7h_modalities | v7h_structured |
 |---------|----------------|----------------|
-| Output Format | JSON in `<lb_think>` tags | Structured schema |
+| Output Format | JSON in `<fs_think>` tags | Structured schema |
 | Parsing | Text parsing + JSON extraction | Direct structured object |
 | Reliability | Can fail on malformed JSON | Guaranteed structure |
 | Type Safety | Runtime validation | Schema-enforced |
@@ -219,7 +219,7 @@ The `StructuredAgentResponse` class provides:
 
 ### Methods
 - `to_modalities_list()`: Extract modalities as list for execution
-- `format_for_display()`: Format with lb_think tags for compatibility
+- `format_for_display()`: Format with fs_think tags for compatibility
 
 ## Example Response
 
@@ -313,7 +313,7 @@ The `StructuredAgentResponse` class provides:
 To migrate from v7h_modalities to v7h_structured:
 
 1. Replace `PREAMBLE_SPEC_V7H_MODALITIES` with `PREAMBLE_SPEC_V7H_STRUCTURED`
-2. Remove JSON parsing logic from `<lb_think>` tags
+2. Remove JSON parsing logic from `<fs_think>` tags
 3. Use `extract_structured_response_from_gemini()` instead of text parsing
 4. Use `StructuredAgentResponse` properties instead of parsed dicts
 5. Update router to use `/api/query-structured` endpoint

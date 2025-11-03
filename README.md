@@ -23,6 +23,8 @@ pip install fastapi django google-genai psycopg[binary,pool] dj-database-url htt
 cp .env.example .env
 ```
 
+source .env
+
 3. Update `.env` with your API keys:
 - `GEMINI_API_KEY`: Get from https://ai.google.dev/
 - `SERPAPI_API_KEY`: Get from https://serpapi.com/
@@ -55,7 +57,7 @@ python manage.py migrate
 6. Start the server:
 ```bash
 # Make sure virtual environment is activated
-uvicorn app_server:app --reload --port 8000
+uvicorn app_server:app --host 0.0.0.0 --port 8000 --reload
 
 # Or using Python module:
 python -m uvicorn app_server:app --reload --port 8000

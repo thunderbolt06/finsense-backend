@@ -17,17 +17,31 @@ def create_user_message(
     latest = chat.get_latest_message() if hasattr(chat, 'get_latest_message') else None
     root = chat.root_message if latest else None  # Access root_message synchronously (OK in sync context)
     
+    # Determine the actual parent message
+    actual_parent = parent_message or latest
+    
     message = ChatMessage.objects.create(
         chat=chat,
         role=ChatRole.USER.value,
         content_type=ChatDataType.TEXT.value,
         content=content,
-        parent_message=parent_message or latest,
+        parent_message=actual_parent,
         root_message=root,
         context_collected=context_collected,
         context_data=context_data or {},
         file_ids=file_ids or [],
     )
+    # Note: ChatMessage.save() already handles setting parent_message.child_message
+    # automatically when the message is created. We only need to manually update latest if:
+    # 1. latest exists and is different from the actual parent (meaning parent_message was explicitly provided)
+    # 2. latest doesn't already have a child_message (to avoid unique constraint violation)
+    # We reload latest to get the most current state after message creation.
+    if latest and latest != actual_parent:
+        # Reload to get current state (including any child_message set by save())
+        latest = ChatMessage.objects.get(pk=latest.pk)
+        if not latest.child_message:
+            latest.child_message = message
+            latest.save(update_fields=['child_message'])
     
     return message
 
@@ -95,7 +109,7 @@ def create_tool_message(
     return message
 
 
-def messages_to_api_format(messages: list[ChatMessage]) -> list[list[str]]:
+def messages_to_api_format(messages: list[ChatMessage], latest_message: ChatMessage | None = None) -> list[list[str]]:
     """Convert ChatMessage list to format expected by LLM API.
     
     Returns: List of [role, content_data...] pairs for LLM API.
@@ -122,9 +136,9 @@ def messages_to_api_format(messages: list[ChatMessage]) -> list[list[str]]:
                 "func_name": msg.metadata.get("tool_name") or msg.metadata.get("func_name"),
             }
             blocks = [msg.role, f"{msg.content_type}:{json.dumps(tool_result)}"]
-        
+        if latest_message and latest_message.id == msg.id:
+            api_format.append(["system", "This is the final user query. Please respond to the user's question. All the messages before this one are the context of the user's question and the assistant's response."])
         api_format.append(blocks)
-    
     return api_format
 
 

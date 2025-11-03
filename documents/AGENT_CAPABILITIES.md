@@ -26,7 +26,7 @@ This document provides a comprehensive guide to understanding and using FinSense
 - Good for: Quick queries, simple fact-finding
 
 #### 2. **Modalities-Based Agent (v7h_modalities)**
-- Uses modality JSON in `<lb_think>` tags
+- Uses modality JSON in `<fs_think>` tags
 - Multi-turn autonomous execution
 - Good for: Complex research, multi-step analysis
 
@@ -208,7 +208,7 @@ This document provides a comprehensive guide to understanding and using FinSense
 
 When agent determines research is needed:
 
-1. **Initial Analysis**: Adds "RESEARCH" tag (e.g., `<lb_think>M10 RESEARCH</lb_think>`)
+1. **Initial Analysis**: Adds "RESEARCH" tag (e.g., `<fs_think>M10 RESEARCH</fs_think>`)
 2. **Research Plan**: Creates todo list of research items
 3. **Execution**: Addresses each item in separate steps
 4. **Adaptation**: Modifies plan based on findings
@@ -388,7 +388,7 @@ for line in response.iter_lines():
 Each agent message has three parts:
 
 #### 1. Initial Analysis
-Hidden in `<lb_think>` tags at the start:
+Hidden in `<fs_think>` tags at the start:
 - Format: `E0`, `N1`, `M10`, etc.
 - **E** = Enough info (final answer)
 - **N** = Not enough (1-3 steps needed)
@@ -407,7 +407,7 @@ What you see in the conversation:
 - Full synthesis for final answer
 
 #### 3. Final Internal Portion
-Hidden in `<lb_think>` tags at the end:
+Hidden in `<fs_think>` tags at the end:
 - `Qx`: Number of questions asked (if >0, stops)
 - Self-critique (1-7 words, actionable flaws only)
 - Optional modality JSON for next step
@@ -415,10 +415,10 @@ Hidden in `<lb_think>` tags at the end:
 ### Example Response
 
 ```
-<lb_think>N2</lb_think>
+<fs_think>N2</fs_think>
 Let me check the stock prices for AAPL and GOOGL...
 
-<lb_think>Q0 Need both prices{{"first_modality":{"type":"get_stock_price","symbol":"AAPL","period":"1d"},"additional_parallel_modalities":[{"type":"get_stock_price","symbol":"GOOGL","period":"1d"}]}}</lb_think>
+<fs_think>Q0 Need both prices{{"first_modality":{"type":"get_stock_price","symbol":"AAPL","period":"1d"},"additional_parallel_modalities":[{"type":"get_stock_price","symbol":"GOOGL","period":"1d"}]}}</fs_think>
 ```
 
 **Breakdown**:

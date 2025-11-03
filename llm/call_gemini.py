@@ -3,6 +3,7 @@ Simplified Gemini LLM integration - no observability/telemetry.
 """
 import json
 import os
+import warnings
 from functools import cache
 from typing import Any, AsyncIterator
 
@@ -14,6 +15,21 @@ from llm.domain.models import ChatResponse, ToolData
 from llm.helpers import format_chat_history_for_gemini_api
 from llm.types import LLMConfig
 from utils.logging import logger
+
+# Suppress Pydantic serialization warnings from Gemini SDK
+# These warnings occur when Content objects are serialized but are harmless
+warnings.filterwarnings(
+    "ignore",
+    message=".*PydanticSerializationUnexpectedValue.*",
+    category=UserWarning,
+)
+# Suppress Gemini SDK warnings about non-text parts (thought_signature, function_call, etc.)
+# These are informational and don't affect functionality
+warnings.filterwarnings(
+    "ignore",
+    message=".*non-text parts in the response.*",
+    category=UserWarning,
+)
 
 GEMINI_FLASH_LITE_MODEL = "gemini-2.5-flash-lite"
 DEFAULT_GEMINI_FLASH_MODEL = "gemini-2.5-flash-preview-09-2025"
@@ -145,23 +161,36 @@ async def stream_gemini(
 
             candidate = chunk.candidates[0]
             if not candidate.content or not candidate.content.parts:
-                logger.warning("Gemini API chunk contains no content or the content has no parts.")
+                logger.debug("Gemini API chunk contains no content or the content has no parts.")
                 continue
 
+            # Process all parts
+            has_text = False
             for part in candidate.content.parts:
-                if part.thought:
-                    yield ChatResponse(text=part.text or "", metadata={"thought": True})
+                # Handle function calls
                 if part.function_call:
                     function_call = part.function_call
+                    # Use function_call.id if available, otherwise use name as fallback
+                    tool_id = function_call.id if hasattr(function_call, 'id') and function_call.id else function_call.name
                     yield ChatResponse(
                         tool=ToolData(
                             index="0",
-                            tool_id=function_call.id,
+                            tool_id=tool_id or function_call.name,  # Ensure tool_id is never None
                             func_name=function_call.name,
                             func_args=json.dumps(function_call.args),
                         )
                     )
-            if chunk.text:
+                # Handle text (including thought text)
+                elif part.text:
+                    has_text = True
+                    # Only yield thought text if we want to include thoughts
+                    if part.thought:
+                        yield ChatResponse(text=part.text, metadata={"thought": True})
+                    else:
+                        yield ChatResponse(text=part.text)
+            
+            # Also check chunk.text as fallback (Gemini sometimes provides text at chunk level)
+            if chunk.text and not has_text:
                 last_chunk = chunk
                 yield ChatResponse(text=chunk.text)
 

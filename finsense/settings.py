@@ -29,10 +29,17 @@ class AppSettings(BaseSettings):
     # API Keys
     GEMINI_API_KEY: str = Field(default="")
     SERPAPI_API_KEY: str = Field(default="")
+    FRED_API_KEY: str = Field(default="")  # Optional: for real macro economic data
     
     # Connection pool settings
     MIN_DB_CONNECTION_POOL_SIZE: int = Field(default=1)
     MAX_DB_CONNECTION_POOL_SIZE: int = Field(default=10)
+    
+    # AWS S3 settings (optional)
+    AWS_ACCESS_KEY_ID: str = Field(default="")
+    AWS_SECRET_ACCESS_KEY: str = Field(default="")
+    AWS_STORAGE_BUCKET_NAME: str = Field(default="")
+    AWS_S3_REGION_NAME: str = Field(default="us-east-2")
 
 
 # Initialize settings

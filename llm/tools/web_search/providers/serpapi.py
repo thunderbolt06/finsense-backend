@@ -24,7 +24,8 @@ async def _call_serpapi(search_query: str, engine: str = "google_light") -> dict
     async with get_async_client() as client:
         response = await client.get("https://serpapi.com/search", params=params)
         response.raise_for_status()
-        return await response.json()
+        # httpx.Response.json() is synchronous, not async
+        return response.json()
 
 
 async def get_web_search_context_with_serpapi(search_query: str, engine: str = "google_light") -> WebResponse:

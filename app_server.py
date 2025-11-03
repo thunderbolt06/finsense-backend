@@ -33,17 +33,51 @@ async def lifespan(_app: FastAPI):
 
 
 # CORS configuration
-cors_config = {
-    "allow_origins": [
-        "http://localhost:1420",
-        "http://localhost:3000",
-        "http://127.0.0.1:1420",
-        "http://127.0.0.1:3000",
-    ],
-    "allow_credentials": True,
-    "allow_methods": ["*"],
-    "allow_headers": ["*"],
-}
+# For development, allow common frontend ports
+# Set CORS_ALLOW_ALL_ORIGINS=true in environment to allow all origins (development only)
+ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL_ORIGINS", "true").lower() == "true"  # Default to true for development
+
+if ALLOW_ALL_ORIGINS:
+    # Development mode: Allow all origins using regex
+    cors_config = {
+        "allow_origin_regex": r".*",  # Allow all origins via regex
+        "allow_credentials": True,
+        "allow_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+        "allow_headers": ["*"],
+        "expose_headers": ["*"],
+        "max_age": 3600,
+    }
+else:
+    # Production mode: Explicit origins
+    cors_config = {
+        "allow_origins": [
+            "http://localhost:1420",
+            "http://localhost:3000",
+            "http://localhost:5173",  # Vite default
+            "http://localhost:5174",
+            "http://localhost:8080",
+            "http://localhost:8081",
+            "http://127.0.0.1:1420",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:8080",
+            "http://0.0.0.0:1420",
+            "http://0.0.0.0:3000",
+        ],
+        "allow_credentials": True,
+        "allow_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+        "allow_headers": [
+            "Content-Type",
+            "Authorization",
+            "Accept",
+            "Origin",
+            "X-Requested-With",
+            "Access-Control-Request-Method",
+            "Access-Control-Request-Headers",
+        ],
+        "expose_headers": ["*"],
+        "max_age": 3600,
+    }
 
 # Create FastAPI app
 app = FastAPI(
@@ -52,14 +86,21 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=cors_config["allow_origins"],
-    allow_credentials=cors_config["allow_credentials"],
-    allow_methods=cors_config["allow_methods"],
-    allow_headers=cors_config["allow_headers"],
-)
+# Add CORS middleware - MUST be added before routes
+middleware_kwargs = {
+    "allow_credentials": cors_config["allow_credentials"],
+    "allow_methods": cors_config["allow_methods"],
+    "allow_headers": cors_config["allow_headers"],
+    "expose_headers": cors_config["expose_headers"],
+    "max_age": cors_config["max_age"],
+}
+
+if "allow_origin_regex" in cors_config:
+    middleware_kwargs["allow_origin_regex"] = cors_config["allow_origin_regex"]
+else:
+    middleware_kwargs["allow_origins"] = cors_config["allow_origins"]
+
+app.add_middleware(CORSMiddleware, **middleware_kwargs)
 
 
 @app.get("/ping")
@@ -115,8 +156,16 @@ async def db_test():
 # Include routers AFTER Django setup
 # Import at the end to ensure Django is configured
 from routers.chat_router import router as chat_router
+from routers.chat_router_structured import router as chat_router_structured
+from routers.chat_router_messages import router as chat_router_messages
+from routers.chat_router_agentic import router as chat_router_agentic
+from features.files.files_router import router as files_router
 
 app.include_router(chat_router)
+app.include_router(chat_router_structured)
+app.include_router(chat_router_messages)
+app.include_router(chat_router_agentic)
+app.include_router(files_router)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -65,7 +65,8 @@ python -m uvicorn app_server:app --reload --port 8000
 
 - `GET /api/ping` - Health check
 - `GET /api/db-test` - Test database connection
-- `POST /api/query` - Chat endpoint (work in progress)
+- `POST /api/query` - Chat endpoint with streaming responses. Returns `chat_id` in the final `done` event.
+- `GET /api/traces` - Get all chat histories from all chats
 
 ## Architecture
 

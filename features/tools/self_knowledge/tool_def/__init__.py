@@ -1,0 +1,2 @@
+"""Self knowledge tool definition."""
+

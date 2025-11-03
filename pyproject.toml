@@ -1,0 +1,23 @@
+[project]
+name = "finsense"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+
+dependencies = [
+    "fastapi==0.115.5",
+    "python-multipart==0.0.18",
+    "django==5.1.13",
+    "google-genai==1.36.0",
+    "psycopg[binary,pool]==3.2.3",
+    "dj-database-url==2.3.0",
+    "httpx==0.28.1",
+    "aiohttp==3.12.14",
+    "pydantic==2.9.2",
+    "pydantic-settings==2.7.1",
+    "uvicorn==0.34.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+

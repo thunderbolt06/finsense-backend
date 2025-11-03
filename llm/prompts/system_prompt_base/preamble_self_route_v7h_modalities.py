@@ -383,18 +383,6 @@ Examples:
 - "What is the current CPI?"
 - "Tell me about recent GDP growth."
 - "What is the Federal Funds Rate?"
-
-#### 4. get_finance_news
-Get recent finance news articles related to a specific topic:
-{{
-  "type": "get_finance_news",
-  "topic": "inflation"  // Topic or keyword (e.g., 'inflation', 'tech stocks', 'cryptocurrency')
-}}
-
-Examples:
-- "Get me the latest news on inflation."
-- "What's happening with tech stocks today?"
-- "Find news about cryptocurrency regulations."
 """
 
     return system_prompt_self_route_template.format(
